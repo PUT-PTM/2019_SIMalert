@@ -16,5 +16,6 @@ AT+CMGS="+48987654321"<CR><LF> 	//Set SMS Number				>
 Control AT commands
 AT<CR><LF>  					//Basic command that tests the connection with the module
 AT+COPS?<CR><LF> 				//Returns the current mode and the operator
-AT+CPAS<CR><LF> 				//Reutrns the activity statys, 0 - Ready	
+AT+CPAS<CR><LF> 				//Reutrns the activity status, 0 - Ready	
 AT+CSQ<CR><LF> 					//Signal Quality level (the higher val (max 31 or 7) the better)
+

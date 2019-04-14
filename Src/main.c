@@ -1,231 +1,189 @@
-
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
+  * @attention
   *
-  * COPYRIGHT(c) 2019 STMicroelectronics
+  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx_hal.h"
-#include "stm32_tm1637.h"
-/* USER CODE BEGIN Includes */
 
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "stm32_tm1637.h"
 /* USER CODE END Includes */
 
-/* Private variables ---------------------------------------------------------*/
-GPIO_PinState valueIO1;
-GPIO_PinState valueIO2;
-GPIO_PinState valueIO3;
-GPIO_PinState valueIO4;
-GPIO_PinState valueIO5;
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
 
-int counter = 0;
-int multiplier = 1000;
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+int gotACK();
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim4;
+
+UART_HandleTypeDef huart3;
+
 /* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
 
+/* Private variables ---------------------------------------------------------*/
+uint8_t at_UART[10] = {'A', 'T', '<','C','R','>','<','L','F','>'};
+uint8_t at_cmgf1_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','1', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
+uint8_t at_cmgf0_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','0', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
+uint8_t at_cmgs_UART[30] = {'A', 'T', '+', 'C', 'M', 'G', 'S','=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
+uint8_t atd_UART[27] = {'A', 'T', 'D', '=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
+uint8_t ath_UART[11] = {'A', 'T', 'H', '<','C','R','>','<','L','F','>'};
+uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
+uint8_t receiveUART[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-
-// Temporary functions (Not used at the moment)
-void test(){
-	  valueIO1 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
-		  if(valueIO1 == GPIO_PIN_RESET) {
-		  tm1637DisplayDecimal(valueIO1, 0);
-		  }
-		  else{
-			  tm1637DisplayDecimal(997, 0);
-		  }
-}
-void readAllPins(){
-	 valueIO1 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
-	 valueIO2 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2);
-	 valueIO3 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
-	 valueIO4 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-	 valueIO5 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
-}
-void scanKeys(){
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	//readAllPins();
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-	//readAllPins();
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	//readAllPins();
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-	//readAllPins();
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-	readAllPins();
-}
-int ReadButtons_5IOKeys() {
-	GPIO_InitTypeDef GPIO_InitStruct;
-
-	  // Start reading the Joystick keys
-	 /*Configure GPIO pin : PA0 */
-		  	  GPIO_InitStruct.Pin = GPIO_PIN_0;
-		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-		      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
-		  	  /*Configure GPIO pins : PA1 PA2 PA3 PA4
-		  	                           PA5 */
-		  	  GPIO_InitStruct.Pin =  GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4
-		  	                          |GPIO_PIN_5;
-		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)==GPIO_PIN_RESET); return 11;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); return 12;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); return 13;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); return 14;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); return 15;}
-
-	  // Start reading the K1-K4 push keys
-
-	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-
-	  	  /*Configure GPIO pin : PA1 */
-	  	  GPIO_InitStruct.Pin = GPIO_PIN_1;
-	  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	  	  /*Configure GPIO pins : PA0 PA2 PA3 PA4
-	  	                           PA5 */
-	  	  GPIO_InitStruct.Pin =  GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4
-	  	                          |GPIO_PIN_5;
-	  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); return 1;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); return 2;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); return 3;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); return 4;}
-
-	  // Start reading the K5-K7 push keys
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-
-	  	  	  /*Configure GPIO pin : PA2 */
-	  	  	  GPIO_InitStruct.Pin = GPIO_PIN_2;
-	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  	  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  	  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-	  	  	  /*Configure GPIO pins : PA0 PA1 PA3 PA4
-	  	  	                           PA5 */
-	  	  	  GPIO_InitStruct.Pin =  GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3|GPIO_PIN_4
-	  	  	                          |GPIO_PIN_5;
-	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  	  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); return 5;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); return 6;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); return 7;}
-
-	  // Start reading the K8-K9 push keys
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-
-	  	  	  	  /*Configure GPIO pin : PA3 */
-	  	  	  	  GPIO_InitStruct.Pin = GPIO_PIN_3;
-	  	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  	  	  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  	  	  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  	  	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	  	  	  	  /*Configure GPIO pins : PA0 PA1 PA2 PA4
-	  	  	  	                           PA5 */
-	  	  	  	  GPIO_InitStruct.Pin =  GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4
-	  	  	  	                          |GPIO_PIN_5;
-	  	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  	  	  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); return 8;}
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); return 9;}
-
-	  // Start reading the 1K0 push key
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-
-	 	  	  	  	  /*Configure GPIO pin : PA4 */
-	 	  	  	  	  GPIO_InitStruct.Pin = GPIO_PIN_4;
-	 	  	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	 	  	  	  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	 	  	  	  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	 	  	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	 	  	  	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-	 	  	  	  	  /*Configure GPIO pins : PA0 PA1 PA2 PA3
-	 	  	  	  	                           PA5 */
-	 	  	  	  	  GPIO_InitStruct.Pin =  GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-	 	  	  	  	                          |GPIO_PIN_5;
-	 	  	  	  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	 	  	  	  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	 	  	  	  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	 if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); return 10;}
-
-	 // Back to pullUp
-	 GPIO_InitStruct.Pin =  GPIO_PIN_4;
-	 GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	 GPIO_InitStruct.Pull = GPIO_PULLUP;
-
-	 return 0; //No key pressed
-
-}
-
+static void MX_TIM4_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+   if(huart->Instance == USART3){
+	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+       HAL_UART_Receive_IT(&huart3, receiveUART, sizeof(receiveUART));
+       if(gotACK() == 1){
+    	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+    	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+       }
+       HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+   }
+}
 
+void readButtons(){
+	 GPIO_InitTypeDef GPIO_InitStruct;
+		//Read Joystick
+		  /*Configure GPIO pins : PA1 PA2 PA3 PA4 PA5
+
+		  	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1| GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4 |GPIO_PIN_5;
+		  	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		  	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+		  	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET){
+			tm1637DisplayDecimal(0, 1);
+			while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)==GPIO_PIN_RESET);
+		}
+	*/
+
+	   //Read Keys 1-4
+		  /*Configure GPIO pin : PA1 */
+		  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+		  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1;
+		  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+		  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+		  		  	  /*Configure GPIO pins : PA2 PA3 PA4
+		  		  	                           PA5 */
+		  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4
+		  		  	                          |GPIO_PIN_5;
+		  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+		  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){ tm1637DisplayDecimal(0, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ tm1637DisplayDecimal(1, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(2, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(3, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
+
+		//Read Keys 5-7
+		  /*Configure GPIO pin : PA2 */
+		  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+		  		  	  GPIO_InitStruct.Pin = GPIO_PIN_2;
+		  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+		  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		  		    /*Configure GPIO pins : PA1*/
+		  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_1;
+		  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+		  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ tm1637DisplayDecimal(4, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(5, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(6, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
+
+		//Read Keys 8-9
+		  /*Configure GPIO pin : PA3 */
+		  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+		  		  	  GPIO_InitStruct.Pin = GPIO_PIN_3;
+		  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+		  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		  		    /*Configure GPIO pins : PA2*/
+		  		    	  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_2;
+		  		    	  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		  		    	  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+		  		    	  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(7, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(8, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
+
+		//Read Key 10
+		  /*Configure GPIO pin : PA4 */
+		  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		  		  	  GPIO_InitStruct.Pin = GPIO_PIN_4;
+		  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+		  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		  		    /*Configure GPIO pins : PA3*/
+		  		    	  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_3;
+		  		    	  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		  		    	  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+		  		    	  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(9, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1 |GPIO_PIN_2 |GPIO_PIN_3 |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
+}
 /* USER CODE END PFP */
 
+/* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int gotACK(){
 
+	if(receiveUART[0]=='O' && receiveUART[1]=='K')
+	       {
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+	    	   receiveUART[0]='1';
+	    	   receiveUART[1]='2';
+	    	   return 1;
+	       } else return 0;
+}
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
-  *
-  * @retval None
+  * @retval int
   */
 int main(void)
 {
@@ -233,11 +191,11 @@ int main(void)
 
   /* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-  tm1637Init();
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -251,8 +209,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM4_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_UART_Receive_IT(&huart3, receiveUART, sizeof(receiveUART));
 
   /* USER CODE END 2 */
 
@@ -260,118 +220,37 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) //trigger operation
+	 	  	  	  {
 
-	  GPIO_InitTypeDef GPIO_InitStruct;
-	//Read Joystick
-	  /*Configure GPIO pins : PA1 PA2 PA3 PA4 PA5
-
-	  	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1| GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4 |GPIO_PIN_5;
-	  	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET){
-		tm1637DisplayDecimal(0, 1);
-		while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)==GPIO_PIN_RESET);
-	}
-*/
-
-   //Read Keys 1-4
-	  /*Configure GPIO pin : PA1 */
-	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1;
-	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	  		  	  /*Configure GPIO pins : PA2 PA3 PA4
-	  		  	                           PA5 */
-	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4
-	  		  	                          |GPIO_PIN_5;
-	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){ tm1637DisplayDecimal(0, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ tm1637DisplayDecimal(1, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(2, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(3, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
-
-	//Read Keys 5-7
-	  /*Configure GPIO pin : PA2 */
-	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_2;
-	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  		    /*Configure GPIO pins : PA1*/
-	  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_1;
-	  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ tm1637DisplayDecimal(4, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(5, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(6, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
-
-	//Read Keys 8-9
-	  /*Configure GPIO pin : PA3 */
-	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_3;
-	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  		    /*Configure GPIO pins : PA2*/
-	  		    	  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_2;
-	  		    	  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  		    	  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  		    	  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ tm1637DisplayDecimal(7, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(8, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
-
-	//Read Key 10
-	  /*Configure GPIO pin : PA4 */
-	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_4;
-	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
-	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	  		    /*Configure GPIO pins : PA3*/
-	  		    	  		    	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_3;
-	  		    	  		    	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  		    	  		    	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  		    	  		    	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ tm1637DisplayDecimal(9, 0); while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); }
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1 |GPIO_PIN_2 |GPIO_PIN_3 |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
+	 	  			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+		  	  	  	HAL_Delay(200);
+	 	  			HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
+	 	  	  	  }
 	  }
-  }
-  /* USER CODE END WHILE */
-  /* USER CODE BEGIN 3 */
+	readButtons();
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
 
   /* USER CODE END 3 */
+}
 
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-
 void SystemClock_Config(void)
 {
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-
-    /**Configure the main internal regulator output voltage 
-    */
+  /** Configure the main internal regulator output voltage 
+  */
   __HAL_RCC_PWR_CLK_ENABLE();
-
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -382,11 +261,10 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
-
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -396,43 +274,118 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
-
-    /**Configure the Systick interrupt time 
-    */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
-
-    /**Configure the Systick 
-    */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-  /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-/** Configure pins as 
-        * Analog 
-        * Input 
-        * Output
-        * EVENT_OUT
-        * EXTI
-*/
-static void MX_GPIO_Init(void)
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct;
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 19999;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 16799;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 57600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
-  /*Configure GPIO pins : PA1 PA2 PA3 PA4
-                           PA5 */
-  GPIO_InitStruct.Pin =  GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4
-                          |GPIO_PIN_5;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PA2 PA3 PA4 PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 }
 
@@ -442,11 +395,9 @@ static void MX_GPIO_Init(void)
 
 /**
   * @brief  This function is executed in case of error occurrence.
-  * @param  file: The file name as string.
-  * @param  line: The line in file as a number.
   * @retval None
   */
-void _Error_Handler(char *file, int line)
+void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
@@ -465,7 +416,7 @@ void _Error_Handler(char *file, int line)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t* file, uint32_t line)
+void assert_failed(uint8_t *file, uint32_t line)
 { 
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
@@ -473,13 +424,5 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
