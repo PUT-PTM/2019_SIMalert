@@ -56,7 +56,9 @@ uint8_t at_cmgs_UART[30] = {'A', 'T', '+', 'C', 'M', 'G', 'S','=','"','+','4','8
 uint8_t atd_UART[27] = {'A', 'T', 'D', '=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
 uint8_t ath_UART[11] = {'A', 'T', 'H', '<','C','R','>','<','L','F','>'};
 uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
+uint8_t end_UART[1] = {'1A'};
 uint8_t receiveUART[2];
+int ready=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -71,10 +73,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
        HAL_UART_Receive_IT(&huart3, receiveUART, sizeof(receiveUART));
        if(gotACK() == 1){
-    	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-    	   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+    	   ready=1;
        }
-       HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
    }
 }
 
@@ -221,13 +221,80 @@ int main(void)
   while (1)
   {
 	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) //trigger operation
-	 	  	  	  {
+		  {
+		  //Blinking led that shows that trigger worked
 
-	 	  			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-		  	  	  	HAL_Delay(200);
-	 	  			HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
-	 	  	  	  }
-	  }
+		  for(int i=0; i<5; i++)
+		  {
+			  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+			  HAL_Delay(400);
+		  }
+
+			//AT command sending to SIM module
+			do {
+				HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
+				HAL_Delay(400);
+			} while(ready==0);
+			ready=0;
+			for(int i=0; i<3; i++)
+					  {
+						  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+						  HAL_Delay(400);
+					  }
+			//Change mode to SMS mode
+			do {
+				HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
+				HAL_Delay(400);
+			} while(ready==0);
+			ready=0;
+
+			for(int i=0; i<3; i++)
+					  {
+						  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+						  HAL_Delay(400);
+					  }
+
+			//Setting number for sending SMS
+			//HAL_UART_Transmit_IT(&huart3, at_cmgs_UART, strlen(at_cmgs_UART));
+			//HAL_Delay(400);
+
+			//Sending content of the message
+			//HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
+			//HAL_Delay(400);
+			while(ready==0){
+				HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
+				HAL_Delay(400);
+			}
+
+
+			//Change mode to CALLING mode
+			do {
+				HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
+				HAL_Delay(400);
+			} while(ready==0);
+			ready=0;
+			for(int i=0; i<5; i++)
+			  {
+				  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+				  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+				  HAL_Delay(400);
+			  }
+			//Making a CALL
+			do {
+				HAL_UART_Transmit_IT(&huart3, atd_UART, strlen(atd_UART));
+				HAL_Delay(400);
+			} while(ready==0);
+			ready=0;
+
+			//Hanging up a CALL
+			HAL_Delay(25000);
+			do {
+				HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
+				HAL_Delay(300);
+			} while(ready==0);
+			ready=0;
+		  	}
+  }
 	readButtons();
     /* USER CODE END WHILE */
 
