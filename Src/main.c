@@ -49,6 +49,15 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 
 /* Private variables ---------------------------------------------------------*/
+uint8_t at_UART[10] = {'A', 'T', '\r','\n'};
+uint8_t at_cmgf1_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','1', '\r','\n'};
+uint8_t at_cmgf0_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','0', '\r','\n'};
+uint8_t at_cmgs_UART[30] = {'A', 'T', '+', 'C', 'M', 'G', 'S','=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '\r','\n'};
+uint8_t atd_UART[27] = {'A', 'T', 'D',  '+','4','8','6','6','4','9','4','2','3','3','3',';', '\r','\n'};
+uint8_t ath_UART[11] = {'A', 'T', 'H', '\r','\n'};
+uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
+uint8_t end_UART[1] = {'1A'};
+/*
 uint8_t at_UART[10] = {'A', 'T', '<','C','R','>','<','L','F','>'};
 uint8_t at_cmgf1_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','1', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
 uint8_t at_cmgf0_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','0', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
@@ -56,7 +65,7 @@ uint8_t at_cmgs_UART[30] = {'A', 'T', '+', 'C', 'M', 'G', 'S','=','"','+','4','8
 uint8_t atd_UART[27] = {'A', 'T', 'D', '=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
 uint8_t ath_UART[11] = {'A', 'T', 'H', '<','C','R','>','<','L','F','>'};
 uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
-uint8_t end_UART[1] = {'1A'};
+uint8_t end_UART[1] = {'1A'};*/
 uint8_t receiveUART[2];
 int ready=0;
 
@@ -279,10 +288,10 @@ int main(void)
 			//Sending content of the message
 			//HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
 			//HAL_Delay(400);
-			while(ready==0){
-				HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
-				HAL_Delay(400);
-			}
+			//while(ready==0){
+			//	HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
+			//	HAL_Delay(400);
+			//}
 
 
 			//Change mode to CALLING mode
@@ -305,7 +314,7 @@ int main(void)
 			ready=0;
 
 			//Hanging up a CALL
-			HAL_Delay(25000);
+			HAL_Delay(10000);
 			do {
 				HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
 				HAL_Delay(300);
