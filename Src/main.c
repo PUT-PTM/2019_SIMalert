@@ -75,7 +75,7 @@ GPIO_PinState valueIO2;
 GPIO_PinState valueIO3;
 GPIO_PinState valueIO4;
 GPIO_PinState valueIO5;
-
+int do_count = 0;
 int counter = 3;
 char value[4] = "0000";
 int int_value;
@@ -192,6 +192,7 @@ void readButtons(){
 	int_value = atoi(&value[0]);
 	tm1637DisplayDecimal(int_value,0);
 }
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -205,6 +206,79 @@ int gotACK(){
 	    	   receiveUART[1]='2';
 	    	   return 1;
 	       } else return 0;
+}
+void alarm(){
+	//Blinking led that shows that trigger worked
+	 for(int i=0; i<5; i++)
+	 {
+		 HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+		 HAL_Delay(400);
+	 }
+
+	//AT command sending to SIM module
+	do
+	{
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+		HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
+		HAL_Delay(200);
+	} while(ready==0);
+	ready=0;
+
+	//Change mode to SMS mode
+	do
+	{
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
+		HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
+		HAL_Delay(200);
+	} while(ready==0);
+	ready=0;
+
+
+	//Setting number for sending SMS
+	HAL_UART_Transmit_IT(&huart3, at_cmgs_UART, strlen(at_cmgs_UART));
+	HAL_Delay(200);
+
+	//Sending content of the message
+	HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
+	HAL_Delay(200);
+
+	while(ready==0)
+	{
+		HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
+		HAL_Delay(400);
+	}
+	ready=0;
+
+	//Change mode to CALLING mode
+	do
+	{
+		HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
+		HAL_Delay(400);
+	} while(ready==0);
+	ready=0;
+
+	for(int i=0; i<5; i++)
+	{
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+		HAL_Delay(400);
+	 }
+	//Making a CALL
+	do
+	{
+		HAL_UART_Transmit_IT(&huart3, atd_UART, strlen(atd_UART));
+		HAL_Delay(400);
+	} while(ready==0);
+	ready=0;
+
+	//Hanging up a CALL
+	HAL_Delay(10000);
+	do
+	{
+		HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
+		HAL_Delay(300);
+	} while(ready==0);
+	ready=0;
 }
 /* USER CODE END 0 */
 
@@ -247,81 +321,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) //trigger operation
+	  //trigger operation when movement detected
+	  if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
 		  {
-		  //Blinking led that shows that trigger worked
-
-		  for(int i=0; i<5; i++)
-		  {
-			  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-			  HAL_Delay(400);
+		  	 do_count = 1;
 		  }
-
-			//AT command sending to SIM module
-			do {
-				HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
-				HAL_Delay(400);
-			} while(ready==0);
-			ready=0;
-			for(int i=0; i<3; i++)
-					  {
-						  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-						  HAL_Delay(400);
-					  }
-			//Change mode to SMS mode
-			do {
-				HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
-				HAL_Delay(400);
-			} while(ready==0);
-			ready=0;
-
-			for(int i=0; i<3; i++)
-					  {
-						  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-						  HAL_Delay(400);
-					  }
-
-			//Setting number for sending SMS
-			//HAL_UART_Transmit_IT(&huart3, at_cmgs_UART, strlen(at_cmgs_UART));
-			//HAL_Delay(400);
-
-			//Sending content of the message
-			//HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
-			//HAL_Delay(400);
-			//while(ready==0){
-			//	HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
-			//	HAL_Delay(400);
-			//}
-
-
-			//Change mode to CALLING mode
-			do {
-				HAL_UART_Transmit_IT(&huart3, at_cmgf1_UART, strlen(at_cmgf1_UART));
-				HAL_Delay(400);
-			} while(ready==0);
-			ready=0;
-			for(int i=0; i<5; i++)
-			  {
-				  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-				  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-				  HAL_Delay(400);
-			  }
-			//Making a CALL
-			do {
-				HAL_UART_Transmit_IT(&huart3, atd_UART, strlen(atd_UART));
-				HAL_Delay(400);
-			} while(ready==0);
-			ready=0;
-
-			//Hanging up a CALL
-			HAL_Delay(10000);
-			do {
-				HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
-				HAL_Delay(300);
-			} while(ready==0);
-			ready=0;
-		  	}
-  }			
 			//Reading keyboard and displaying Values on screen
 			readButtons();
 			
@@ -393,9 +397,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 19999;
+  htim4.Init.Prescaler = 16799;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 16799;
+  htim4.Init.Period = 1999;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -462,6 +466,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -469,6 +474,12 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PE5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA2 PA3 PA4 PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
