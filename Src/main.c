@@ -75,10 +75,11 @@ GPIO_PinState valueIO2;
 GPIO_PinState valueIO3;
 GPIO_PinState valueIO4;
 GPIO_PinState valueIO5;
-int do_count = 0;
+int do_count = 1;
 int counter = 3;
 char value[4] = "0000";
 int int_value;
+int time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -96,6 +97,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     	   ready=1;
        }
    }
+}
+
+void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef *htim){
+if (htim-> Instance == TIM4)
+{
+	if(time >= 20) {
+		do_count = 0;
+		time = 0;
+		//tm1637DisplayDecimal(9999, 1);
+											//TODO funkcja wysylajaca alert here?
+		HAL_TIM_Base_Stop_IT (&htim4);
+	}
+	time = time +1;
+}
 }
 
 void readButtons(){
@@ -311,6 +326,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM4_Init();
+  TIM4->PSC = 16800;
+  TIM4->ARR = 5000;
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart3, receiveUART, sizeof(receiveUART));
@@ -320,22 +337,34 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
+  {														//TODO odkomentowac
 	  //trigger operation when movement detected
-	  if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
-		  {
-		  	 do_count = 1;
-		  }
+	  //if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
+		//  {
+		//  	 do_count = 1;
+		//  }
 			//Reading keyboard and displaying Values on screen
-			readButtons();
-			
+	  if(do_count == 1){
+		  HAL_TIM_Base_Start_IT (&htim4);
+		  //tm1637DisplayDecimal(1111,0);				//TODO usunac komentarze
+		  while(do_count){
+			  //tm1637DisplayDecimal(2222,0);
+			  readButtons();
+			  	  	  	  	  	  	  	  	  	  // Jesli kod poprawny zatrzymaj zegar i wyjdz z petli
+			  if(int_value == 1111) {
+		      HAL_TIM_Base_Stop_IT (&htim4);
+		      do_count = 0;
+		      }
+	   }
+	}
+	  //tm1637DisplayDecimal(7777,0);
+}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
   /* USER CODE END 3 */
-}
-
+ }
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -397,9 +426,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 16799;
+  htim4.Init.Prescaler = 8399;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 1999;
+  htim4.Init.Period = 499;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
