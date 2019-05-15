@@ -57,25 +57,17 @@ uint8_t atd_UART[27] = {'A', 'T', 'D',  '+','4','8','6','6','4','9','4','2','3',
 uint8_t ath_UART[11] = {'A', 'T', 'H', '\r','\n'};
 uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
 uint8_t end_UART[1] = {'1A'};
-/*
-uint8_t at_UART[10] = {'A', 'T', '<','C','R','>','<','L','F','>'};
-uint8_t at_cmgf1_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','1', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
-uint8_t at_cmgf0_UART[17] = {'A', 'T', '+', 'C', 'M', 'G', 'F','=','0', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
-uint8_t at_cmgs_UART[30] = {'A', 'T', '+', 'C', 'M', 'G', 'S','=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
-uint8_t atd_UART[27] = {'A', 'T', 'D', '=','"','+','4','8','6','6','4','9','4','2','3','3','3','"', '<', 'C', 'R', '>', '<', 'L', 'F','>'};
-uint8_t ath_UART[11] = {'A', 'T', 'H', '<','C','R','>','<','L','F','>'};
-uint8_t msg_UART[11] = {'I', 'N', 'T', 'R','U','D','E','R','!','!', 26};
-uint8_t end_UART[1] = {'1A'};*/
+
 uint8_t receiveUART[2];
 int ready=0;
-
+int alert_go = 0;
 // TM1637 and Keyboard variables
 GPIO_PinState valueIO1;
 GPIO_PinState valueIO2;
 GPIO_PinState valueIO3;
 GPIO_PinState valueIO4;
 GPIO_PinState valueIO5;
-int do_count = 1;
+int do_count = 0;
 int counter = 3;
 char value[4] = "0000";
 int int_value;
@@ -102,12 +94,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef *htim){
 if (htim-> Instance == TIM4)
 {
-	if(time >= 20) {
+	if(time >= 5) {
+						//TODO funkcja wysylajaca alert here?
+		//tm1637DisplayDecimal(9999, 1);
 		do_count = 0;
 		time = 0;
-		//tm1637DisplayDecimal(9999, 1);
-											//TODO funkcja wysylajaca alert here?
 		HAL_TIM_Base_Stop_IT (&htim4);
+		alert_go = 1;
 	}
 	time = time +1;
 }
@@ -224,10 +217,10 @@ int gotACK(){
 }
 void alarm(){
 	//Blinking led that shows that trigger worked
-	 for(int i=0; i<5; i++)
+	 for(int a=0; a<5; a++)
 	 {
 		 HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-		 HAL_Delay(400);
+		 HAL_Delay(500);
 	 }
 
 	//AT command sending to SIM module
@@ -339,10 +332,13 @@ int main(void)
   while (1)
   {														//TODO odkomentowac
 	  //trigger operation when movement detected
-	  //if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
-		//  {
-		//  	 do_count = 1;
-		//  }
+	  if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
+		  {
+		  	  	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+		  		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+		  	 do_count = 1;
+  	  	  	  }
+
 			//Reading keyboard and displaying Values on screen
 	  if(do_count == 1){
 		  HAL_TIM_Base_Start_IT (&htim4);
@@ -353,10 +349,12 @@ int main(void)
 			  	  	  	  	  	  	  	  	  	  // Jesli kod poprawny zatrzymaj zegar i wyjdz z petli
 			  if(int_value == 1111) {
 		      HAL_TIM_Base_Stop_IT (&htim4);
+		      time = 0;
 		      do_count = 0;
 		      }
 	   }
 	}
+	  if(alert_go == 1) alarm();
 	  //tm1637DisplayDecimal(7777,0);
 }
     /* USER CODE END WHILE */
