@@ -250,13 +250,6 @@ void alarm(){
 	HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
 	HAL_Delay(200);
 
-	while(ready==0)
-	{
-		HAL_UART_Transmit_IT(&huart3, end_UART, strlen(end_UART));
-		HAL_Delay(400);
-	}
-	ready=0;
-
 	//Change mode to CALLING mode
 	do
 	{
@@ -271,22 +264,26 @@ void alarm(){
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
 		HAL_Delay(400);
 	 }
-	//Making a CALL
-	do
+	//Making a CALL 5 times
+	for(int call=0; call<5; call++)
 	{
-		HAL_UART_Transmit_IT(&huart3, atd_UART, strlen(atd_UART));
-		HAL_Delay(400);
-	} while(ready==0);
-	ready=0;
+		//Making a call
+		do
+		{
+			HAL_UART_Transmit_IT(&huart3, atd_UART, strlen(atd_UART));
+			HAL_Delay(400);
+		} while(ready==0);
+		ready=0;
 
-	//Hanging up a CALL
-	HAL_Delay(10000);
-	do
-	{
-		HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
-		HAL_Delay(300);
-	} while(ready==0);
-	ready=0;
+		//Hanging up a CALL
+		HAL_Delay(20000);
+		do
+		{
+			HAL_UART_Transmit_IT(&huart3, ath_UART, strlen(ath_UART));
+			HAL_Delay(300);
+		} while(ready==0);
+		ready=0;
+	}
 }
 /* USER CODE END 0 */
 
