@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32_tm1637.h"
+#include "stdlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,9 +70,13 @@ GPIO_PinState valueIO4;
 GPIO_PinState valueIO5;
 int do_count = 0;
 int counter = 3;
-char value[4] = "0000";
-int int_value;
+char value[4]="0000";
+int int_value=0000;
 int time = 0;
+int start_code_int=0000;
+int code_set = 0;
+int end=0;
+int endtim=9999;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,32 +99,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef *htim){
 if (htim-> Instance == TIM4)
 {
-	if(time >= 5) {
-						//TODO funkcja wysylajaca alert here?
-		//tm1637DisplayDecimal(9999, 1);
+	if(do_count==1){
+	if(time >= 25) {
 		do_count = 0;
 		time = 0;
 		HAL_TIM_Base_Stop_IT (&htim4);
 		alert_go = 1;
 	}
 	time = time +1;
+}}
+if(end == 1){
+	tm1637DisplayDecimal(endtim,0);
+	endtim=endtim-1;
 }
 }
 
 void readButtons(){
 	  GPIO_InitTypeDef GPIO_InitStruct;
-	//Read Joystick
-	  /*Configure GPIO pins : PA1 PA2 PA3 PA4 PA5
 
-	  	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1| GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4 |GPIO_PIN_5;
-	  	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	  	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
-	  	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET){
-		tm1637DisplayDecimal(0, 1);
-		while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)==GPIO_PIN_RESET);
-	}
-*/
 
  //Read Keys 1-4
 	  /*Configure GPIO pin : PA1 */
@@ -136,10 +133,10 @@ void readButtons(){
 	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
 	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){ value[counter]='0'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); HAL_Delay(200); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='1'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(200);}
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='2'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(200);}
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='3'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(200);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){ value[counter]='0'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='1'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='2'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='3'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100);}
 
 	//Read Keys 5-7
 	  /*Configure GPIO pin : PA2 */
@@ -156,9 +153,9 @@ void readButtons(){
 	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
 	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='4'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(200); }
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='5'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(200);}
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='6'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(200);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='4'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='5'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='6'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100);}
 
 	//Read Keys 8-9
 	  /*Configure GPIO pin : PA3 */
@@ -175,8 +172,8 @@ void readButtons(){
 	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
 	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='7'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(200);}
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='8'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(200);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='7'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='8'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100);}
 
 	//Read Key 10
 	  /*Configure GPIO pin : PA4 */
@@ -192,19 +189,124 @@ void readButtons(){
 	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
 	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='9'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(200);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='9'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100);}
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1 |GPIO_PIN_2 |GPIO_PIN_3 |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
+
+	int_value = atoi(&value[0]);
+
+	tm1637DisplayDecimal(int_value,0);
+	//Display Section
+	if(counter == -1) {
+		counter = 3;
+
+	}
+
+
+}
+
+void setPassword(){
+
+	 GPIO_InitTypeDef GPIO_InitStruct;
+
+ //Read Keys 1-4
+	  /*Configure GPIO pin : PA1 */
+
+
+	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_1;
+	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  /*Configure GPIO pins : PA2 PA3 PA4 PA5 */
+	  		  	  GPIO_InitStruct.Pin =   GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
+	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  		  	  GPIO_InitStruct.Pull = GPIO_PULLUP;
+	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET){ value[counter]='0'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='1'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='2'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100);}
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='3'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100);}
+
+	//Read Keys 5-7
+	  /*Configure GPIO pin : PA2 */
+	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_2;
+	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  /*Configure GPIO pins : PA1*/
+	  		      GPIO_InitStruct.Pin =   GPIO_PIN_1;
+	  		      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
+	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET){ value[counter]='4'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='5'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='6'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100); }
+
+	//Read Keys 8-9
+	  /*Configure GPIO pin : PA3 */
+	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_3;
+	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  /*Configure GPIO pins : PA2*/
+	  		      GPIO_InitStruct.Pin =   GPIO_PIN_2;
+	  		      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
+	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET){ value[counter]='7'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4)==GPIO_PIN_RESET); HAL_Delay(100); }
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='8'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100); }
+
+	//Read Key 10
+	  /*Configure GPIO pin : PA4 */
+	  	  	  	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	  		  	  GPIO_InitStruct.Pin = GPIO_PIN_4;
+	  		  	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  		  	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  		  	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  		  	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	  /*Configure GPIO pins : PA3*/
+	  		      GPIO_InitStruct.Pin =   GPIO_PIN_3;
+	  		      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  		      GPIO_InitStruct.Pull = GPIO_PULLUP;
+	  		      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET){ value[counter]='9'; counter--; while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)==GPIO_PIN_RESET); HAL_Delay(100); }
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1 |GPIO_PIN_2 |GPIO_PIN_3 |GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_SET);
 
 	//Display Section
-	if(counter == -1) counter = 3;
-	int_value = atoi(&value[0]);
-	tm1637DisplayDecimal(int_value,0);
-}
 
+	start_code_int = atoi(&value[0]);
+	tm1637DisplayDecimal(start_code_int,0);
+			if(counter == -1){
+				counter = 3;
+			    code_set = 1;
+			    HAL_Delay(500);
+			   resetValue();
+			    tm1637DisplayDecimal(0000,0);
+			}
+
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void resetValue(){
+	 for(int i=0; i<4; i++)
+	 {
+		value[i]=0;
+	 }
+}
 int gotACK(){
 
 	if(receiveUART[0]=='O' && receiveUART[1]=='K')
@@ -224,7 +326,6 @@ void alarm(){
 	 }
 
 	//AT command sending to SIM module
-	do
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
 		HAL_UART_Transmit_IT(&huart3, at_UART, strlen(at_UART));
@@ -232,7 +333,7 @@ void alarm(){
 	} while(ready==0);
 	ready=0;
 
-	//Change mode to SMS mode
+	/*Change mode to SMS mode
 	do
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
@@ -240,15 +341,15 @@ void alarm(){
 		HAL_Delay(200);
 	} while(ready==0);
 	ready=0;
-
+*/
 
 	//Setting number for sending SMS
-	HAL_UART_Transmit_IT(&huart3, at_cmgs_UART, strlen(at_cmgs_UART));
-	HAL_Delay(200);
+	//HAL_UART_Transmit_IT(&huart3, at_cmgs_UART, strlen(at_cmgs_UART));
+	//HAL_Delay(200);
 
 	//Sending content of the message
-	HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
-	HAL_Delay(200);
+	//HAL_UART_Transmit_IT(&huart3, msg_UART, strlen(msg_UART));
+	//HAL_Delay(200);
 
 	//Change mode to CALLING mode
 	do
@@ -257,7 +358,7 @@ void alarm(){
 		HAL_Delay(400);
 	} while(ready==0);
 	ready=0;
-
+	end=1;
 	for(int i=0; i<5; i++)
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
@@ -265,7 +366,7 @@ void alarm(){
 		HAL_Delay(400);
 	 }
 	//Making a CALL 5 times
-	for(int call=0; call<5; call++)
+	for(int call=0; call<1; call++)
 	{
 		//Making a call
 		do
@@ -322,38 +423,87 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart3, receiveUART, sizeof(receiveUART));
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {														//TODO odkomentowac
+  {		  // Set Password
+	  if(code_set == 0){
+		  setPassword();
+	  }
+	  else {
 	  //trigger operation when movement detected
+
 	  if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_SET)
 		  {
-		  	  	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-		  		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-		  	 do_count = 1;
+		  	 HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+		  	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+		  	if(end==0){
+		  	do_count = 1;}
+
   	  	  	  }
 
 			//Reading keyboard and displaying Values on screen
 	  if(do_count == 1){
 		  HAL_TIM_Base_Start_IT (&htim4);
-		  //tm1637DisplayDecimal(1111,0);				//TODO usunac komentarze
-		  while(do_count){
-			  //tm1637DisplayDecimal(2222,0);
+
+		  while(do_count == 1){
+
 			  readButtons();
-			  	  	  	  	  	  	  	  	  	  // Jesli kod poprawny zatrzymaj zegar i wyjdz z petli
-			  if(int_value == 1111) {
-		      HAL_TIM_Base_Stop_IT (&htim4);
+
+			  // Jesli kod poprawny zatrzymaj zegar i wyjdz z petli
+			  if(start_code_int == int_value)
+			  {
 		      time = 0;
 		      do_count = 0;
+		      HAL_TIM_Base_Stop_IT (&htim4);
+		      start_code_int=0;
+		      int_value=1;
+		      end=1;
+		      resetValue();
+		      HAL_Delay(1000);
 		      }
 	   }
 	}
+	  if(end == 1) {
+		  int i=0;
+
+		  for(int i4=5; i4>=0; i4--)
+		  {
+			  value[3]=i4+48;
+			  for(int i3=9; i3>=0; i3--)
+			  {
+				  value[2]=i3+48;
+				  for(int i2=9; i2>=0; i2--)
+				  {
+					  value[1]=i2+48;
+					  for(int i1=9; i1>=0; i1--)
+					  {
+						  value[0]=i1+48;
+						  int_value=atoi(&value[0]);
+						  tm1637SetBrightness(0);
+						  tm1637SetBrightness(7);
+						  tm1637DisplayDecimal(int_value,1);
+						  HAL_Delay(10);
+					  			  }
+				  			  }
+			  }
+
+		  }
+		  for(int i4=7; i4>=0; i4--)
+		 		  {
+		  tm1637SetBrightness(i4);
+		  HAL_Delay(100);
+		 		  }
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_13|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+		  break;
+	  }
 	  if(alert_go == 1) alarm();
-	  //tm1637DisplayDecimal(7777,0);
+	  }
 }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
