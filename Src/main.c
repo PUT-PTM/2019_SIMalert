@@ -463,11 +463,19 @@ int main(void)
 		      int_value=1;
 		      end=1;
 		      resetValue();
-		      HAL_Delay(1000);
+		      tm1637DisplayDecimal(0000,1);
+		      HAL_Delay(5000);
+		      for(int i4=7; i4>=0; i4--)
+		      		 		  {
+		      		  tm1637SetBrightness(i4);
+		      		  HAL_Delay(100);
+		      		 		  }
+		      		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_13|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+		      		  break;
 		      }
 	   }
 	}
-	  if(end == 1) {
+	  if(end == 1 && do_count==1) {
 		  int i=0;
 
 		  for(int i4=5; i4>=0; i4--)
